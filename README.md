@@ -7,5 +7,6 @@ Repositório para estudo de serviços de Computação da AWS no contexto de Clou
 **Serviços de Computação**
 
 * [Elastic Compute Cloud](./ec2/)
+* [Auto Scaling](./auto_scaling/)
 
 ---
