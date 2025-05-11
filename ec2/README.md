@@ -2,26 +2,42 @@
 
 Serviço de máquinas virtuais na nuvem.
 
+* [1. Mecanismos de Armazenamento](#1-mecanismos-de-armazenamento)
+* [2. Rede e Segurança](#2-rede-e-segurança)
+* [3. User Data](#3-user-data)
+* [4. AMI](#4-amazon-machine-image-ami)
+* [5. Instance States](#5-estados-de-uma-instância)
+* [6. Preço](#6-definição-de-preço)
+* [7. Hosts Dedicados](#7-hosts-dedicados)
+* [8. Spot Instances](#8-spot-instances)
+* [9. Placement Group](#9-placement-group)
+* [10. Rede](#10-rede)
+* [11. Problemas Comuns](#11-problemas-de-execução-de-instâncias)
+
 ---
 
 ## 1. Mecanismos de Armazenamento
 
 **Elastic Block Storage (EBS)**
+
 Para dados persistentes que independem do estado da instância.
 
 ---
 
 **Instance Store**
+
 Para dados temporários e de acesso rápido.
 
 ---
 
 **Elastic File System (EFS)**
+
 Para dados compartilhados entre várias instâncias.
 
 ---
 
 **Simpes Storage Service (S3)**
+
 Para dados de backup.
 
 ---
@@ -29,6 +45,7 @@ Para dados de backup.
 ## 2. Rede e Segurança
 
 **Elastic Fabric Adapter (EFA)**
+
 Oferece escalabilidade, flexibilidade e elasticidade para aplicativos HPC.
 
 Latência menor e mais consistente com maior throughput que canais tradicionais de TCP.
@@ -36,6 +53,7 @@ Latência menor e mais consistente com maior throughput que canais tradicionais 
 ---
 
 **Elastic IP**
+
 IP público constante para a EC2.
 Há um limite de 5 endereços Elastic IP por Region (por conta da escassez do IPv4).
 
@@ -116,6 +134,7 @@ Você também pode torná-la pública para toda a comunidade AWS.
 ![](./imagens/states.png)
 
 **Hibernate**
+
 Salva uma cópia da memória RAM no disco EBS da instância. Quando ela é reinicializada, ela volta no estado em que estava, com os mesmos dados na memória. É ideal para aplicações que demoram muito para carregar.
 
 Você não é cobrado pela instância enquanto ela está no estado de `stopped`, mas é cobrado enquanto ela está em `stopping` pois neste instante os dados da RAM estão sendo transferidos para o disco EBS (você não é cobrado pela transferência, só pelo armazenamento).
@@ -125,6 +144,8 @@ Para poder usar o Hibernate, você deve habilitar essa opção no momento de cri
 Hibernate não é habilitado com Instance Store (por conta de não persistir dados nesse modelo de storage).
 
 A RAM precisa ter menos de 150 GB e deve haver espaço suficiente no EBS para armazenar o conteúdo da RAM.
+
+> **Obs.:** uma instância não pode ficar em estado de `hibernate` por mais de 60 dias. 
 
 ---
 
@@ -176,24 +197,74 @@ Sinal de `rebalanceamento de instância spot` = sinal que avisa quando uma inst�
 
 ## 9. Placement Group
 
-Serve para determinar o posicionamento físico de um grupo de instâncias interdependentes. Pode ser:
-
-* Cluster: agrupa instâncias em uma AZ. Entrega alta performance de rede, baixa latência para comunicação de nó a nó, típica de HPC;
-* Partição: distribui instâncias entre partições lógicas, de modo que instâncias em uma partição não compartilhem hardware subjacente com grupos de instâncias em diferentes partições. Ideal para workloads distribuídos e replicados, como Hadoop e Kafka;
-* Distribuição: posiciona estritamente um pequeno grupo de instâncias por hardware subjacente distinto a fim de reduzir falhas correlacionadas. As instâncias são colocadas em racks diferentes.
+Serve para determinar o posicionamento físico de um grupo de instâncias interdependentes. 
 
 Não há custo para criação de um placement group.
+
+Pode ser:
+
+**Cluster**
+
+Agrupa instâncias em uma AZ. Entrega alta performance de rede, baixa latência para comunicação de nó a nó, típica de HPC.
+
+![](./imagens/cluster.png)
+
+Prós: rede (10 Gbps de largura de banda entre as instâncias com enhanced networking habilitado).
+
+Contras: Se a AZ falhar, todas as instâncias falham.
+
+Use Cases: trabalhos de Big Data que precisam completar rapidamente, aplicações que precisam de latência extremamente baixa e alto throughput de rede.
+
+---
+
+**Partition**
+
+Distribui instâncias entre partições lógicas, de modo que instâncias em uma partição não compartilhem hardware subjacente com grupos de instâncias em diferentes partições. Ideal para workloads distribuídos e replicados, como Hadoop (HDFS) e Kafka.
+
+![](./imagens/partition.png)
+
+Cada partição é um rack e as partições podem ser criadas em AZs diferentes.
+
+Uma falha em uma partição pode afetar muitas instâncias, mas não afeta outras partições.
+
+As instâncias EC2 podem acessar informações das partições como `metadata`.
+
+---
+
+**Spread**
+
+Posiciona estritamente um pequeno grupo de instâncias por hardware subjacente distinto a fim de reduzir falhas correlacionadas. As instâncias são colocadas em racks diferentes.
+
+![](./imagens/spread.png)
+
+Podem ser colocadas em AZs diferentes e reduz o risco de falha simultânea, porém, é limitado a 7 instâncias por AZ por placement group.
+
+Use Cases: Aplicações que precisam maximizar a alta disponibilidade e aplicações criticas onde cada instância precisa ser isolada de falhas uma das outras.
 
 ---
 
 ## 10. Rede
 
-**Interface de Rede**
-É como se fosse a placa de rede da instância. Instâncias com várias placas de rede oferecem maior performance de rede, incluindo recursos de largura de banda acima de 100 Gbps e maior performance de taxa de pacotes.
+**Elastic Network Interfaces (ENI)**
+
+Componente lógico de uma VPC que representa um `cartão de rede virtual`.
+
+A ENI pode ter as seguintes propriedades:
+
+* IPv4 privado primário
+* Um ou mais IPv4 privados secundários
+* Um IPv4 público
+* Um ou mais security groups
+* Um MAC address
+
+É possível criar ENI de forma independente e atachar nas instâncias EC2 (geralmente, com propósito de failover)
+
+![](./imagens/eni.png)
 
 ---
 
 **EBS**
+
 Quando o volume EBS raiz de uma instâncias é substituído, a instância é reinicializada e o conteúdo da memória RAM se perde.
 
 Não é possível substituir o volume raiz do Instance Store.

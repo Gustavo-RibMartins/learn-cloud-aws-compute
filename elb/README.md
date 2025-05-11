@@ -28,9 +28,9 @@ Se não fosse habilitado o balanceamento de carga entre zonas, cada destino na A
 
 ![](./imagens/elb_2.png)
 
-* Com `Application Load Balancer` o balanceamento de carga entre zonas está sempre habilitado;
+* Com `Application Load Balancer` o balanceamento de carga entre zonas está sempre habilitado e não há custo por transferência de dados entre AZs.
 
-* Com `Network Load Balancer` o balanceamento de carga entre zonas está sempre desabilitado por padrão.
+* Com `Network Load Balancer` e `Gateway Load Balancer` o balanceamento de carga entre zonas está sempre desabilitado por padrão e há custo por transferência de dados entre AZs.
 
 ---
 
@@ -46,6 +46,14 @@ Suporta múltiplas aplicações HTTP em máquinas diferentes (Target Group) e na
 
 Recurso `Port Mapping` para redirecionar para porta dinâmica.
 
+Também suporta WebSocket.
+
+Faz roteamento para diferentes target groups com base em:
+
+* path em uma URL: (example.com/`users` e example.com/`posts`)
+* hostname em uma URL: (`one.example.com` e `other.example.com`)
+* query string, headers: (example.com/users?`id=123&order=false`)
+
 ---
 
 ## Network Load Balancer (NLB)
@@ -56,7 +64,21 @@ Atua na camada 4.
 
 Menor latência (NLB = 100 ms e ALB = 400 ms).
 
-Direciona tráfego TCP para instâncias.
+Direciona tráfego TCP para instâncias, TLS (TCP seguro) e UDP.
+
+NLB tem um IP estático por AZ e suporta adição de Elastic IP.
+
+![](./imagens/nlb.png)
+
+---
+
+## Gateway Load Balancer (GWLB)
+
+Opera na camada 3 (network layer) - protocolo IP.
+
+![](./imagens/gwlb.png)
+
+Serve para servir tráfego para aplicações de terceiros.
 
 ---
 
@@ -88,6 +110,26 @@ A geração mais recente de endpoints da BPC usados pelo ELB é desenvolvida pel
 
 ---
 
+## Segurança
+
+Load balancer utiliza um certificado X.509 (SSL/TLS server certificate) para criptografar dados em trânsito entre o usuário e o ELB.
+
+![](./imagens/ssl.png)
+
+Você pode gerenciar seus certificados com o `AWS Certificate Manager` (ACM) ou criar e fazer upload do seu próprio certificado.
+
+**SSL - Server Name Indication (SNI)**
+
+Resolve o problema de `múltiplos certificados SSL para um web server` (que serve múltiplos websites).
+
+É um novo protocolo, e requere que o client indique o hostname do target server.
+
+O server irá então encontrar o certificado correto (funciona apenas com ALB v2, NLB v2, CloudFront).
+
+![](./imagens/sni.png)
+
+---
+
 ## Target Group
 
 É usado para rotear solicitações para um ou mais destinos registrados. Ao criar cada regra do `listener`, especifique um target group.
@@ -103,3 +145,18 @@ Target Type = Instance, IP, Função Lambda.
 Além do CloudTrail, o ELB tem um recurso desabilitado por padrão de registrar as solicitações que chegam em logs salvos em um bucket S3 que você escolher. A geração dos logs não é cobrada, só o armazenamento deles no S3.
 
 Também ficam registradas as solicitações que não chegaram nos recursos por terem sido barradas no Load Balancer, como requisições mal intencionadas.
+
+---
+
+## Connection Draining
+
+* Para CLB = Connection Draining
+* Para ALB e NLB = Deregistration Delay
+
+Tempo para completar as requisições em andamento enquanto a instância está unhealth ou em de-registering.
+
+![](./imagens/deregister.png)
+
+O ELB para de enviar requisições para a instância que está sendo drenada.
+
+Deregister Delay pode ser configurado de 1 a 3600 segundos (default = 300s), mas também pode ser desabilitado para drenagem instantânea.
