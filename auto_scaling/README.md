@@ -26,7 +26,13 @@ São os gatilhos do `scale-out/in` do Auto Scaling. Suporta dimensionamento manu
 
 Modelo de configuração de instância que um Auto Scaling Group usa para iniciar instâncias do EC2.
 
+![](./imagens/launch_template.png)
+
 Contém as definições das instâncias a serem adicionadas ao grupo. Você configura AMI, o tipo de instância, escolhe se será Spot Instance, o Security Group, Key Pair, Rede, User Data e etc.
+
+É possível fazer forecast contínuo de previsão da capacidade:
+
+![](./imagens/predictive.png)
 
 ---
 
@@ -53,3 +59,13 @@ Contém as definições das instâncias a serem adicionadas ao grupo. Você conf
 * **Logs do CloudTrail**: você pode registrar as chamadas as APIs do Auto Scaling e armazenar os logs em um bucket S3 que você especificar. Os logs incluem quais solicitações foram feitas, os endereços IP de onde as solicitações vieram, quando a solicitação foi feita e etc;
 
 * **Notificações do SNS**: você pode configurar grupos do Auto Scaling para enviar notificações do SNS sempre que o Auto Scaling incluir ou terminar instâncias.
+
+---
+
+## Cooldown
+
+Depois que uma atividade de scaling ocorre, você fica em `cooldown period` (default 300 s).
+
+Durante o período de cooldown, o ASG não irá lançar ou terminar instâncias (para permitir que as métricas estabilizem).
+
+![](./imagens/cooldown.png)
