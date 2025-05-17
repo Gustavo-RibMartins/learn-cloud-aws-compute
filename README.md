@@ -10,5 +10,6 @@ Repositório para estudo de serviços de Computação da AWS no contexto de Clou
 * [Auto Scaling](./auto_scaling/)
 * [Elastic Load Balancer](./elb/)
 * [Lambda](./lambda/)
+* [AWS Batch](./batch/)
 
 ---
