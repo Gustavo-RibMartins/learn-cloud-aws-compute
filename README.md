@@ -11,5 +11,7 @@ Repositório para estudo de serviços de Computação da AWS no contexto de Clou
 * [Elastic Load Balancer](./elb/)
 * [Lambda](./lambda/)
 * [AWS Batch](./batch/)
+* [Elastic Beanstalk](./beanstalk/)
+* [AWS SAM](./sam/)
 
 ---
